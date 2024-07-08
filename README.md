@@ -53,5 +53,3 @@ void loop() {
     }
 }
 ```
-
-For more detailed examples, refer to the `examples` folder in the repository.
