@@ -1,4 +1,4 @@
-#include "scanchain.h"
+#include "../scanchain.h"
 
 // Initialize static member
 ScanChain* ScanChain::instance = nullptr;
@@ -7,23 +7,20 @@ ScanChain::ScanChain(int chainLength, int clockPin,
                      int dataIn1, int dataOut1, int enable1,
                      int dataIn2, int dataOut2, int enable2,
                      int dataIn3, int dataOut3, int enable3)
-    : chainLength(chainLength), // Length of the scan chain
-      clockPin(clockPin),       // Pin for the clock signal
-      dataPins{{dataIn1, dataOut1}, {dataIn2, dataOut2}, {dataIn3, dataOut3}}, // Input and output pins for each channel
-enablePins{enable1, enable2, enable3}, // Enable pins for each channel
-scanComplete(false),  // Flag to indicate if a scan cycle is complete
-running(false),       // Flag to indicate if the scan chain is currently running
-dataPointer(nullptr), // Pointer to the data to be transferred
-remainingDataSize(0), // Remaining size of data to be transferred
-bufferIndex(0),       // Current index in the buffer
-bufferEmpty(true),    // Flag to indicate if the buffer is empty
-transferCallback(nullptr) // Callback function for data transfer events
+    : chainLength(chainLength > MAX_CHAIN_LENGTH ? MAX_CHAIN_LENGTH : chainLength),
+      clockPin(clockPin),
+      dataPins{{dataIn1, dataOut1}, {dataIn2, dataOut2}, {dataIn3, dataOut3}},
+      enablePins{enable1, enable2, enable3},
+      scanComplete(false),
+      running(false),
+      dataPointer(nullptr),
+      remainingDataSize(0),
+      bufferIndex(0),
+      bufferEmpty(true),
+      transferCallback(nullptr),
+      debugMode(false)
 {
-    // Make sure that our scan chain length never goes out of bounds
-    if (chainLength > MAX_CHAIN_LENGTH) {
-        this->chainLength = MAX_CHAIN_LENGTH;
-    }
-    instance = this;    // Set the static instance to this object
+    instance = this;
 }
 
 // Create scan chain with a clock speed
@@ -96,10 +93,12 @@ void ScanChain::loadDataFromMemory(const uint8_t* data, size_t dataSize) {
 
 // Load the next chunk of data into the buffer
 void ScanChain::loadNextChunk() {
-    size_t bytesToCopy = min(remainingDataSize, BUFFER_SIZE); // Determine how many bytes to copy
-    memcpy(buffer, dataPointer, bytesToCopy);                 // Copy data to buffer
-    dataPointer += bytesToCopy;     // Move data pointer
-    remainingDataSize -= bytesToCopy; // Update remaining data size
+    size_t bytesToCopy = min(remainingDataSize, BUFFER_SIZE);
+    memcpy(const_cast<void*>(static_cast<volatile void*>(buffer)),
+           const_cast<const void*>(static_cast<const volatile void*>(dataPointer)),
+           bytesToCopy);
+    dataPointer += bytesToCopy;
+    remainingDataSize -= bytesToCopy;
     bufferIndex = 0;
     bufferEmpty = false;
 }

@@ -65,11 +65,6 @@ void setup() {
     unsigned long startTime = millis();
     while (!Serial && (millis() - startTime < 5000));
 
-    if (!Serial) {
-        cerr << "Serial failed to connect\n";
-        exit(1);
-    }
-
     // Initialize test data
     // The data pattern is 1, 2, 3, 4, ..., which wraps around after 255
     // This allows easy debugging:
